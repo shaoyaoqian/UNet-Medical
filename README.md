@@ -2,6 +2,8 @@
 
 [![](https://raw.githubusercontent.com/SwanHubX/assets/main/badge2.svg)](https://swanlab.cn/@ZeyiLin/Unet-Medical-Segmentation/runs/67konj7kdqhnfdmusy2u6/chart)
 
+![](./readme_files/train_image.png)
+
 ## 安装环境
 
 ```bash
@@ -26,7 +28,16 @@ unzip dataset/Brain_Tumor_Image_DataSet.zip -d dataset/
 python train.py
 ```
 
-查看SwanLab训练记录过程：
+查看SwanLab训练记录过程：[![](https://raw.githubusercontent.com/SwanHubX/assets/main/badge2.svg)](https://swanlab.cn/@ZeyiLin/Unet-Medical-Segmentation/runs/67konj7kdqhnfdmusy2u6/chart)
 
-[![](https://raw.githubusercontent.com/SwanHubX/assets/main/badge2.svg)](https://swanlab.cn/@ZeyiLin/Unet-Medical-Segmentation/runs/67konj7kdqhnfdmusy2u6/chart)
+![](./readme_files/swanlab.png)
 
+## 推理
+
+```bash
+python predict.py
+```
+
+推理结果会保存在当前目录下，图像名为`predictions.png`。
+
+![](./readme_files/predictions.png)
