@@ -109,7 +109,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
 def main():
     swanlab.init(
         project="Unet-Medical-Segmentation",
-        experiment_name="Unet",
+        experiment_name="bs32-epoch40",
         config={
             "batch_size": 32,
             "learning_rate": 1e-4,
@@ -191,10 +191,10 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
         
         # 选择前3个样本
         indices = random.sample(range(len(images)), min(num_samples, len(images)))
-        indices = indices[:6]
+        indices = indices[:8]
         
         # 创建一个大图
-        plt.figure(figsize=(15, 12))  # 调整图像大小以适应新增的行
+        plt.figure(figsize=(15, 8))  # 调整图像大小以适应新增的行
         plt.suptitle(f'Epoch {swanlab.config["num_epochs"]} Predictions (Random 6 samples)')
         
         for i, idx in enumerate(indices):
