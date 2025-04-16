@@ -227,9 +227,7 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
             plt.title('Overlay')
             plt.axis('off')
         
-        # plt.tight_layout()
-        # 保存到本地
-        plt.savefig('./predictions.png')
+        # 记录图像到SwanLab
         swanlab.log({"predictions": swanlab.Image(plt)})
 
 if __name__ == '__main__':
