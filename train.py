@@ -1,8 +1,8 @@
-import matplotlib.pyplot as plt
-from pycocotools.coco import COCO
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
+from pycocotools.coco import COCO
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import random
@@ -114,8 +114,8 @@ def main():
             "batch_size": 32,
             "learning_rate": 1e-4,
             "num_epochs": 40,
-            "device": "cuda" if torch.cuda.is_available() else "cpu"
-        }
+            "device": "cuda" if torch.cuda.is_available() else "cpu",
+        },
     )
     
     # 设置设备
@@ -194,12 +194,12 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
         indices = indices[:6]
         
         # 创建一个大图
-        plt.figure(figsize=(15, 10))
-        plt.suptitle(f'Epoch {swanlab.config["num_epochs"]+1} Predictions (Random 6 samples)')
+        plt.figure(figsize=(15, 12))  # 调整图像大小以适应新增的行
+        plt.suptitle(f'Epoch {swanlab.config["num_epochs"]} Predictions (Random 6 samples)')
         
         for i, idx in enumerate(indices):
             # 原始图像
-            plt.subplot(3, 6, i*3 + 1)
+            plt.subplot(4, 8, i*4 + 1)  # 4行而不是3行
             img = images[idx].cpu().numpy().transpose(1, 2, 0)
             img = (img * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]).clip(0, 1)
             plt.imshow(img)
@@ -207,15 +207,24 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
             plt.axis('off')
             
             # 真实掩码
-            plt.subplot(3, 6, i*3 + 2)
+            plt.subplot(4, 8, i*4 + 2)
             plt.imshow(masks[idx].cpu().squeeze(), cmap='gray')
             plt.title('True Mask')
             plt.axis('off')
             
             # 预测掩码
-            plt.subplot(3, 6, i*3 + 3)
+            plt.subplot(4, 8, i*4 + 3)
             plt.imshow(binary_predictions[idx].cpu().squeeze(), cmap='gray')
             plt.title('Predicted Mask')
+            plt.axis('off')
+
+            # 新增：预测掩码叠加在原图上
+            plt.subplot(4, 8, i*4 + 4)
+            plt.imshow(img)  # 先显示原图
+            # 添加红色半透明掩码
+            plt.imshow(binary_predictions[idx].cpu().squeeze(), 
+                      cmap='Reds', alpha=0.3)  # alpha控制透明度
+            plt.title('Overlay')
             plt.axis('off')
         
         # plt.tight_layout()
