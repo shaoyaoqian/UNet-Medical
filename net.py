@@ -64,6 +64,7 @@ class UNet(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        print(f"Input shape: {x.shape}")
         # 编码器路径
         x1, skip1 = self.down1(x)      # 128
         x2, skip2 = self.down2(x1)     # 64

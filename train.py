@@ -8,22 +8,11 @@ import torchvision.transforms as transforms
 import random
 import swanlab
 from net import UNet
-from data import COCOSegmentationDataset
+from data import HDF5Dataset
 
 
 # 数据路径设置
-train_dir = './dataset/train'
-val_dir = './dataset/valid'
-test_dir = './dataset/test'
 
-train_annotation_file = './dataset/train/_annotations.coco.json'
-test_annotation_file = './dataset/test/_annotations.coco.json'
-val_annotation_file = './dataset/valid/_annotations.coco.json'
-
-# 加载COCO数据集
-train_coco = COCO(train_annotation_file)
-val_coco = COCO(val_annotation_file)
-test_coco = COCO(test_annotation_file)
 
 # 定义损失函数
 def dice_loss(pred, target, smooth=1e-6):
@@ -49,6 +38,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         train_acc = 0
         
         for images, masks in train_loader:
+            print(images.shape, masks.shape)
             images, masks = images.to(device), masks.to(device)
             
             optimizer.zero_grad()
@@ -111,7 +101,7 @@ def main():
         project="Unet-Medical-Segmentation",
         experiment_name="bs32-epoch40",
         config={
-            "batch_size": 32,
+            "batch_size": 2,
             "learning_rate": 1e-4,
             "num_epochs": 40,
             "device": "cuda" if torch.cuda.is_available() else "cpu",
@@ -123,16 +113,14 @@ def main():
     
     # 数据预处理
     transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Resize((256, 256)),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        transforms.ToTensor()
     ])
     
     # 创建数据集
-    train_dataset = COCOSegmentationDataset(train_coco, train_dir, transform=transform)
-    val_dataset = COCOSegmentationDataset(val_coco, val_dir, transform=transform)
-    test_dataset = COCOSegmentationDataset(test_coco, test_dir, transform=transform)
-    
+    train_dataset = HDF5Dataset('train.h5', transform=transform)
+    val_dataset = HDF5Dataset('val.h5', transform=transform)
+    test_dataset = HDF5Dataset('test.h5', transform=transform)
+
     # 创建数据加载器
     BATCH_SIZE = swanlab.config["batch_size"]
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)

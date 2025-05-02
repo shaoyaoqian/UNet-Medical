@@ -1,40 +1,22 @@
-import os
-import numpy as np
-from PIL import Image
+from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 import torch
-import torch.nn.functional as nn
+import h5py
 
-class COCOSegmentationDataset(Dataset):
-    def __init__(self, coco, image_dir, transform=None):
-        self.coco = coco
-        self.image_dir = image_dir
-        self.image_ids = coco.getImgIds()
+class HDF5Dataset(Dataset):
+    def __init__(self, file_path, transform=None):
+        self.file = h5py.File(file_path, 'r')  # 注意多进程下需特殊处理
+        self.f = self.file['f']
+        self.u = self.file['u']
         self.transform = transform
 
     def __len__(self):
-        return len(self.image_ids)
+        assert self.f.shape == self.u.shape, "两个数据集形状不一致"
+        return len(self.f)
 
     def __getitem__(self, idx):
-        image_id = self.image_ids[idx]
-        image_info = self.coco.loadImgs(image_id)[0]
-        image_path = os.path.join(self.image_dir, image_info['file_name'])
+        u, f = torch.from_numpy(self.f[idx]), torch.from_numpy(self.u[idx])
+        return u, f
 
-        # 加载图像
-        image = Image.open(image_path)
-        image = np.array(image, dtype=np.uint8)
-
-        # 创建掩码
-        ann_ids = self.coco.getAnnIds(imgIds=image_id)
-        anns = self.coco.loadAnns(ann_ids)
-        mask = np.zeros((image_info['height'], image_info['width']), dtype=np.uint8)
-        for ann in anns:
-            mask = np.maximum(mask, self.coco.annToMask(ann))
-
-        # 转换为张量并预处理
-        if self.transform:
-            image = self.transform(image)
-            mask = torch.from_numpy(mask).float().unsqueeze(0)
-            mask = nn.interpolate(mask.unsqueeze(0), size=(256, 256), mode='nearest').squeeze(0)
-
-        return image, mask
+# 使用DataLoader批量读取
+# dataset = HDF5Dataset('from_memory.h5')
