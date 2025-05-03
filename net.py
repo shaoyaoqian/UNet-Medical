@@ -39,7 +39,7 @@ class UpBlock(nn.Module):
 
 # 定义完整的U-Net模型
 class UNet(nn.Module):
-    def __init__(self, n_channels=3, n_classes=1, n_filters=32):
+    def __init__(self, n_channels=1, n_classes=1, n_filters=32):
         super(UNet, self).__init__()
         
         # 编码器路径

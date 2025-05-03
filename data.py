@@ -16,6 +16,7 @@ class HDF5Dataset(Dataset):
 
     def __getitem__(self, idx):
         u, f = torch.from_numpy(self.f[idx]), torch.from_numpy(self.u[idx])
+        u, f = u.unsqueeze(0), f.unsqueeze(0)
         return u, f
 
 # 使用DataLoader批量读取

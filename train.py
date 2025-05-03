@@ -15,16 +15,10 @@ from data import HDF5Dataset
 
 
 # 定义损失函数
-def dice_loss(pred, target, smooth=1e-6):
-    pred_flat = pred.view(-1)
-    target_flat = target.view(-1)
-    intersection = (pred_flat * target_flat).sum()
-    return 1 - ((2. * intersection + smooth) / (pred_flat.sum() + target_flat.sum() + smooth))
-
 def combined_loss(pred, target):
-    dice = dice_loss(pred, target)
-    bce = nn.BCELoss()(pred, target)
-    return 0.6 * dice + 0.4 * bce
+    mse_loss = nn.MSELoss()(pred, target)
+    return mse_loss
+
 
 # 训练函数
 def train_model(model, train_loader, val_loader, criterion, optimizer, num_epochs, device):
@@ -49,7 +43,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
             optimizer.step()
             
             train_loss += loss.item()
-            train_acc += (outputs.round() == masks).float().mean().item()
+            train_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
 
         train_loss /= len(train_loader)
         train_acc /= len(train_loader)
@@ -66,7 +60,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
                 loss = criterion(outputs, masks)
                 
                 val_loss += loss.item()
-                val_acc += (outputs.round() == masks).float().mean().item()
+                val_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
         
         val_loss /= len(val_loader)
         val_acc /= len(val_loader)
@@ -101,7 +95,7 @@ def main():
         project="Unet-Medical-Segmentation",
         experiment_name="bs32-epoch40",
         config={
-            "batch_size": 2,
+            "batch_size": 32,
             "learning_rate": 1e-4,
             "num_epochs": 40,
             "device": "cuda" if torch.cuda.is_available() else "cpu",
@@ -118,8 +112,8 @@ def main():
     
     # 创建数据集
     train_dataset = HDF5Dataset('train.h5', transform=transform)
-    val_dataset = HDF5Dataset('val.h5', transform=transform)
-    test_dataset = HDF5Dataset('test.h5', transform=transform)
+    val_dataset = HDF5Dataset('train.h5', transform=transform)
+    test_dataset = HDF5Dataset('train.h5', transform=transform)
 
     # 创建数据加载器
     BATCH_SIZE = swanlab.config["batch_size"]
@@ -155,11 +149,11 @@ def main():
             outputs = model(images)
             loss = combined_loss(outputs, masks)
             test_loss += loss.item()
-            test_acc += (outputs.round() == masks).float().mean().item()
+            test_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
     
     test_loss /= len(test_loader)
     test_acc /= len(test_loader)
-    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_acc:.4f}")
+    print(f"Test Loss: {test_loss:.16f}, Test Accuracy: {test_acc:.16f}")
     swanlab.log({"test/loss": test_loss, "test/acc": test_acc})
     
     # 可视化预测结果
@@ -189,8 +183,7 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
             # 原始图像
             plt.subplot(4, 8, i*4 + 1)  # 4行而不是3行
             img = images[idx].cpu().numpy().transpose(1, 2, 0)
-            img = (img * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]).clip(0, 1)
-            plt.imshow(img)
+            plt.imshow(img, cmap='gray')
             plt.title('Original Image')
             plt.axis('off')
             
@@ -202,16 +195,12 @@ def visualize_predictions(model, test_loader, device, num_samples=5, threshold=0
             
             # 预测掩码
             plt.subplot(4, 8, i*4 + 3)
-            plt.imshow(binary_predictions[idx].cpu().squeeze(), cmap='gray')
+            plt.imshow(predictions[idx].cpu().squeeze(), cmap='gray')
             plt.title('Predicted Mask')
             plt.axis('off')
 
-            # 新增：预测掩码叠加在原图上
             plt.subplot(4, 8, i*4 + 4)
-            plt.imshow(img)  # 先显示原图
-            # 添加红色半透明掩码
-            plt.imshow(binary_predictions[idx].cpu().squeeze(), 
-                      cmap='Reds', alpha=0.3)  # alpha控制透明度
+            plt.imshow((predictions[idx]-masks[idx]).cpu().squeeze(), cmap='gray')  # alpha控制透明度
             plt.title('Overlay')
             plt.axis('off')
         
