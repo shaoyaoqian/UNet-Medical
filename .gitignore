@@ -3,3 +3,4 @@ dataset/
 __pycache__/
 /predictions.png
 /best_model.pth
+venv

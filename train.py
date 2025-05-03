@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 import random
 import swanlab
 from net import UNet
-from data import HDF5Dataset
+from data import HDF5Dataset, NpyDataset
 
 
 # 数据路径设置
@@ -32,7 +32,6 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
         train_acc = 0
         
         for images, masks in train_loader:
-            print(images.shape, masks.shape)
             images, masks = images.to(device), masks.to(device)
             
             optimizer.zero_grad()
@@ -43,7 +42,8 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
             optimizer.step()
             
             train_loss += loss.item()
-            train_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
+            print(f"Epoch {torch.norm(outputs, p=2)}, Batch Loss: {torch.norm(masks, p=2)}")
+            train_acc += 1 - torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
 
         train_loss /= len(train_loader)
         train_acc /= len(train_loader)
@@ -60,7 +60,7 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, num_epoch
                 loss = criterion(outputs, masks)
                 
                 val_loss += loss.item()
-                val_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
+                val_acc += 1 - torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
         
         val_loss /= len(val_loader)
         val_acc /= len(val_loader)
@@ -95,7 +95,7 @@ def main():
         project="Unet-Medical-Segmentation",
         experiment_name="bs32-epoch40",
         config={
-            "batch_size": 32,
+            "batch_size": 2,
             "learning_rate": 1e-4,
             "num_epochs": 40,
             "device": "cuda" if torch.cuda.is_available() else "cpu",
@@ -111,9 +111,9 @@ def main():
     ])
     
     # 创建数据集
-    train_dataset = HDF5Dataset('train.h5', transform=transform)
-    val_dataset = HDF5Dataset('train.h5', transform=transform)
-    test_dataset = HDF5Dataset('train.h5', transform=transform)
+    train_dataset = NpyDataset('poisson_solutions_100x32x32.npy', transform=transform)
+    val_dataset = NpyDataset('poisson_solutions_100x32x32.npy', transform=transform)
+    test_dataset = NpyDataset('poisson_solutions_100x32x32.npy', transform=transform)
 
     # 创建数据加载器
     BATCH_SIZE = swanlab.config["batch_size"]
@@ -149,7 +149,7 @@ def main():
             outputs = model(images)
             loss = combined_loss(outputs, masks)
             test_loss += loss.item()
-            test_acc += torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
+            test_acc += 1 - torch.norm(outputs-masks, p=2)/torch.norm(masks, p=2)
     
     test_loss /= len(test_loader)
     test_acc /= len(test_loader)
